@@ -1,7 +1,8 @@
 {
   "name": "ai-metadata-cleaner",
   "version": "1.0.0",
-  "private": true,
+  "license": "MIT",
+  "private": false,
   "description": "Privacy-focused AI metadata cleaner, C2PA remover, EXIF stripper, and pHash fingerprint defense tool.",
   "type": "module",
   "scripts": {

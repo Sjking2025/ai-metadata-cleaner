@@ -2,8 +2,12 @@
 
 A privacy-focused, zero-dependency, 100% client-side web application and standalone CLI tool designed to detect, inspect, and strip AI provenance manifests (C2PA / Content Credentials), traditional EXIF data, GPS geotags, IPTC/XMP tags, and AI generation parameters from images, while offering perceptual hash (pHash) fingerprint defense.
 
-Reference: [AI Metadata Cleaner](https://aimetadatacleaner.com/)  
-Reverse Engineered & Built with: [REA (Reverse Engineer Anything)](https://github.com/morluto/rea.git)
+---
+
+## Credits & Acknowledgements
+
+* **Original Idea & Reference**: Full credit and sincere appreciation to [AI Metadata Cleaner](https://aimetadatacleaner.com/) for the original tool concept, feature set, user interface inspiration, and in-browser privacy philosophy.
+* **Analysis & Reverse Engineering**: Reverse engineered and analyzed using tools and workflows from [REA (Reverse Engineer Anything)](https://github.com/morluto/rea.git).
 
 ---
 
@@ -119,4 +123,5 @@ node cli/cleaner.js
 
 ## License
 
-MIT License. Free for personal and commercial use.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Free for personal and commercial use.

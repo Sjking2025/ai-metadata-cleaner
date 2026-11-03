@@ -40,6 +40,17 @@ export const Footer: React.FC = () => {
       <div className="footer-bottom">
         <div>
           &copy; {new Date().getFullYear()} AI Metadata Cleaner. All processing occurs locally on your device.
+          <span style={{ marginLeft: 12, opacity: 0.8 }}>
+            Idea &amp; Reference Credit:{' '}
+            <a
+              href="https://aimetadatacleaner.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: 'underline' }}
+            >
+              aimetadatacleaner.com
+            </a>
+          </span>
         </div>
         <div style={{ maxWidth: '600px', textAlign: 'right', fontSize: '11px', color: 'var(--ink-3)' }}>
           Disclaimer: This application is a privacy and sanitization utility. It removes metadata headers and resets perceptual hash tracking. It does not alter invisible pixel watermarks (e.g., SynthID) or guarantee specific outcomes on third-party platforms.
