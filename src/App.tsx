@@ -17,7 +17,16 @@ import { processAndCleanImage } from './engine/cleaner';
 import { downloadAllAsZip } from './engine/zip';
 import type { CleanOptions, ImageItem } from './types';
 
-import { Play, Download, Trash2, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import {
+  Play,
+  Download,
+  Trash2,
+  CheckCircle2,
+  ShieldCheck,
+  Sparkles,
+  Layers,
+  Filter
+} from 'lucide-react';
 
 export const App: React.FC = () => {
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -31,6 +40,13 @@ export const App: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
   const [inspectItem, setInspectItem] = useState<ImageItem | null>(null);
+  const [filterMode, setFilterMode] = useState<'all' | 'pending' | 'cleaned'>('all');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Handle file intake & pre-scan
   const handleFilesSelected = async (files: File[]) => {
@@ -46,6 +62,7 @@ export const App: React.FC = () => {
     }));
 
     setImages((prev) => [...prev, ...newItems]);
+    showToast(`Added ${files.length} image${files.length > 1 ? 's' : ''} to queue`);
 
     // Async pre-scan metadata for each file
     for (const item of newItems) {
@@ -69,33 +86,30 @@ export const App: React.FC = () => {
     setIsProcessing(true);
     setProgress(0);
 
-    const total = images.length;
+    const pending = images.filter((img) => img.status !== 'completed');
+    const total = pending.length;
     let completedCount = 0;
 
-    for (let i = 0; i < total; i++) {
+    for (let i = 0; i < images.length; i++) {
       const item = images[i];
-      if (item.status === 'completed') {
-        completedCount++;
-        continue;
-      }
+      if (item.status === 'completed') continue;
 
       setImages((prev) =>
         prev.map((img) =>
-          img.id === item.id ? { ...img, status: 'cleaning', progress: 10 } : img
+          img.id === item.id ? { ...img, status: 'cleaning', progress: 15 } : img
         )
       );
 
-      setCurrentStep(`Processing ${i + 1} of ${total}: ${item.name}`);
+      setCurrentStep(`Processing ${completedCount + 1} of ${total}: ${item.name}`);
 
       try {
         const result = await processAndCleanImage(
           item.file,
           options,
           (pct, stepMsg) => {
-            const itemProgress = pct;
-            const overall = ((i + itemProgress / 100) / total) * 100;
+            const overall = ((completedCount + pct / 100) / total) * 100;
             setProgress(overall);
-            setCurrentStep(`${stepMsg} (${i + 1}/${total})`);
+            setCurrentStep(`${stepMsg} (${completedCount + 1}/${total})`);
           }
         );
 
@@ -136,6 +150,7 @@ export const App: React.FC = () => {
 
     setIsProcessing(false);
     setCurrentStep('All files processed and verified clean!');
+    showToast('Batch processing complete: 100% verified clean!');
   };
 
   const handleRemoveItem = (id: string) => {
@@ -157,15 +172,31 @@ export const App: React.FC = () => {
     setImages([]);
     setProgress(0);
     setCurrentStep('');
+    showToast('Queue cleared');
   };
 
   const completedImages = images.filter((img) => img.status === 'completed');
+  const pendingImages = images.filter((img) => img.status !== 'completed');
+
+  const filteredImages = images.filter((img) => {
+    if (filterMode === 'cleaned') return img.status === 'completed';
+    if (filterMode === 'pending') return img.status !== 'completed';
+    return true;
+  });
 
   return (
     <div className="app-wrapper">
       <Header />
 
       <main className="main-content">
+        {/* Toast feedback pill */}
+        {toastMessage && (
+          <div className="toast-floating-pill" role="status" aria-live="polite">
+            <CheckCircle2 size={15} color="var(--ok)" />
+            <span>{toastMessage}</span>
+          </div>
+        )}
+
         {/* Hero Section */}
         <div className="hero-section">
           <div className="hero-badge-row">
@@ -191,7 +222,7 @@ export const App: React.FC = () => {
           </p>
         </div>
 
-        {/* Dropzone */}
+        {/* Dropzone with enhanced paste support */}
         <Dropzone
           onFilesSelected={handleFilesSelected}
           isProcessing={isProcessing}
@@ -203,27 +234,72 @@ export const App: React.FC = () => {
         {/* Batch Action Toolbar when images exist */}
         {images.length > 0 && (
           <div className="batch-actions-bar">
-            <div className="batch-stats">
-              <span><strong>{images.length}</strong> image{images.length === 1 ? '' : 's'} queued</span>
-              <span>&bull;</span>
-              <span><strong>{completedImages.length}</strong> cleaned &amp; verified</span>
+            <div className="batch-stats-group">
+              <div className="batch-stats-badges">
+                <span className="stat-pill total">
+                  <strong>{images.length}</strong> Total
+                </span>
+                <span className="stat-pill cleaned">
+                  <strong>{completedImages.length}</strong> Cleaned
+                </span>
+                {pendingImages.length > 0 && (
+                  <span className="stat-pill pending">
+                    <strong>{pendingImages.length}</strong> Pending
+                  </span>
+                )}
+              </div>
+
+              {/* Filter Tabs when images > 1 */}
+              {images.length > 1 && (
+                <div className="filter-pill-nav" role="tablist" aria-label="Filter queue">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={filterMode === 'all'}
+                    className={`filter-pill ${filterMode === 'all' ? 'active' : ''}`}
+                    onClick={() => setFilterMode('all')}
+                  >
+                    All ({images.length})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={filterMode === 'pending'}
+                    className={`filter-pill ${filterMode === 'pending' ? 'active' : ''}`}
+                    onClick={() => setFilterMode('pending')}
+                  >
+                    Pending ({pendingImages.length})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={filterMode === 'cleaned'}
+                    className={`filter-pill ${filterMode === 'cleaned' ? 'active' : ''}`}
+                    onClick={() => setFilterMode('cleaned')}
+                  >
+                    Cleaned ({completedImages.length})
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="batch-buttons">
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={handleCleanAll}
-                disabled={isProcessing}
-              >
-                <Play size={14} />
-                <span>{isProcessing ? 'Cleaning...' : 'Clean All Images'}</span>
-              </button>
+              {pendingImages.length > 0 && (
+                <button
+                  type="button"
+                  className="btn-primary btn-pulse-action"
+                  onClick={handleCleanAll}
+                  disabled={isProcessing}
+                >
+                  <Play size={14} />
+                  <span>{isProcessing ? 'Cleaning...' : `Clean ${pendingImages.length} Image${pendingImages.length > 1 ? 's' : ''}`}</span>
+                </button>
+              )}
 
               {completedImages.length > 0 && (
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn-secondary btn-zip-export"
                   onClick={() => downloadAllAsZip(images)}
                 >
                   <Download size={14} />
@@ -255,9 +331,9 @@ export const App: React.FC = () => {
         )}
 
         {/* Results List */}
-        {images.length > 0 && (
-          <div className="results-list">
-            {images.map((item) => (
+        {filteredImages.length > 0 && (
+          <div className="results-list" role="feed" aria-label="Processing results">
+            {filteredImages.map((item) => (
               <ResultCard
                 key={item.id}
                 item={item}

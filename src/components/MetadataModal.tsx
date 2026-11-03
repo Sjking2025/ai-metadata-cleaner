@@ -1,5 +1,15 @@
-import React from 'react';
-import { X, ShieldAlert, Camera, MapPin, Sparkles, FileText } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import {
+  X,
+  ShieldAlert,
+  Camera,
+  MapPin,
+  Sparkles,
+  FileText,
+  Copy,
+  Check,
+  ExternalLink
+} from 'lucide-react';
 import type { DetectedMetadata } from '../types';
 
 interface MetadataModalProps {
@@ -13,130 +23,253 @@ export const MetadataModal: React.FC<MetadataModalProps> = ({
   metadata,
   onClose
 }) => {
+  const [copied, setCopied] = useState(false);
+
+  // Close modal on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (!metadata) return null;
 
+  const handleCopyJson = () => {
+    const jsonStr = JSON.stringify(metadata, null, 2);
+    navigator.clipboard.writeText(jsonStr);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title">Detected Metadata: {fileName}</div>
-          <button type="button" onClick={onClose} style={{ color: 'var(--ink-3)' }}>
-            <X size={20} />
-          </button>
+          <div className="modal-header-text">
+            <h2 id="modal-title" className="modal-title">Detected Metadata Inspection</h2>
+            <p className="modal-subtitle">{fileName}</p>
+          </div>
+
+          <div className="modal-header-actions">
+            <button
+              type="button"
+              className="btn-modal-action"
+              onClick={handleCopyJson}
+              title="Copy detected metadata as JSON"
+            >
+              {copied ? <Check size={14} color="var(--ok)" /> : <Copy size={14} />}
+              <span>{copied ? 'Copied JSON' : 'Export JSON'}</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn-modal-close"
+              onClick={onClose}
+              aria-label="Close modal dialog"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="modal-body">
           {/* C2PA Provenance Section */}
           {metadata.c2pa && (
-            <div className="modal-section">
-              <div className="modal-section-title" style={{ color: '#b83210' }}>
-                <ShieldAlert size={14} style={{ display: 'inline', marginRight: 4 }} />
-                C2PA Content Credentials &amp; Provenance
+            <section className="modal-section" aria-label="C2PA Credentials">
+              <div className="modal-section-title tag-c2pa-title">
+                <ShieldAlert size={15} />
+                <span>C2PA Content Credentials &amp; Provenance Manifest</span>
               </div>
-              <div className="modal-raw-box" style={{ background: '#fdf3f0', borderColor: '#f3c7b8' }}>
-                <div><strong>Issuer / Generator:</strong> {metadata.c2paIssuer || 'Unknown / Embedded Manifest'}</div>
-                <div><strong>Status:</strong> Active cryptographic provenance manifest found</div>
-                <div><strong>Impact:</strong> Platforms (Instagram, Facebook, Pinterest) detect this signature to label image as AI.</div>
+              <div className="modal-raw-box c2pa-box">
+                <div className="info-row">
+                  <span className="info-key">Issuer / Generator:</span>
+                  <span className="info-val font-bold">{metadata.c2paIssuer || 'Cryptographic Manifest Detected'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-key">Manifest Status:</span>
+                  <span className="info-val">Active JUMBF Provenance Assertion</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-key">Social Impact:</span>
+                  <span className="info-val highlight-warn">
+                    Platforms (Instagram, Facebook, Pinterest) detect this signature to label image as AI.
+                  </span>
+                </div>
               </div>
-            </div>
+            </section>
           )}
 
           {/* AI Prompts & Generation Parameters */}
           {metadata.pngTextChunks && metadata.pngPrompts && (
-            <div className="modal-section">
-              <div className="modal-section-title" style={{ color: 'var(--accent)' }}>
-                <Sparkles size={14} style={{ display: 'inline', marginRight: 4 }} />
-                AI Generation Prompts &amp; Parameters
+            <section className="modal-section" aria-label="AI Generation Prompts">
+              <div className="modal-section-title tag-ai-title">
+                <Sparkles size={15} />
+                <span>AI Generation Prompts &amp; Sampler Parameters</span>
               </div>
-              <div className="modal-raw-box">
+              <div className="modal-raw-box ai-box">
                 {metadata.pngPrompts.prompt && (
-                  <div style={{ marginBottom: 6 }}>
-                    <strong>Positive Prompt:</strong> {metadata.pngPrompts.prompt}
+                  <div className="prompt-block">
+                    <span className="prompt-label">Positive Prompt:</span>
+                    <p className="prompt-text">{metadata.pngPrompts.prompt}</p>
                   </div>
                 )}
                 {metadata.pngPrompts.negativePrompt && (
-                  <div style={{ marginBottom: 6 }}>
-                    <strong>Negative Prompt:</strong> {metadata.pngPrompts.negativePrompt}
+                  <div className="prompt-block">
+                    <span className="prompt-label">Negative Prompt:</span>
+                    <p className="prompt-text negative">{metadata.pngPrompts.negativePrompt}</p>
                   </div>
                 )}
                 {metadata.pngPrompts.parameters && (
-                  <div>
-                    <strong>Full Generation Info:</strong>
-                    <div style={{ marginTop: 4, opacity: 0.9 }}>{metadata.pngPrompts.parameters}</div>
+                  <div className="prompt-block">
+                    <span className="prompt-label">Raw Generation Parameters:</span>
+                    <pre className="prompt-pre">{metadata.pngPrompts.parameters}</pre>
                   </div>
                 )}
               </div>
-            </div>
+            </section>
           )}
 
           {/* EXIF Data */}
           {metadata.exif && metadata.exifDetails && (
-            <div className="modal-section">
-              <div className="modal-section-title">
-                <Camera size={14} style={{ display: 'inline', marginRight: 4 }} />
-                Camera &amp; EXIF Information
+            <section className="modal-section" aria-label="Camera EXIF">
+              <div className="modal-section-title tag-exif-title">
+                <Camera size={15} />
+                <span>Camera Hardware &amp; Shot Settings (EXIF)</span>
               </div>
               <div className="modal-raw-box">
-                {metadata.exifDetails.make && <div><strong>Make:</strong> {metadata.exifDetails.make}</div>}
-                {metadata.exifDetails.model && <div><strong>Model:</strong> {metadata.exifDetails.model}</div>}
-                {metadata.exifDetails.lens && <div><strong>Lens:</strong> {metadata.exifDetails.lens}</div>}
-                {metadata.exifDetails.software && <div><strong>Software:</strong> {metadata.exifDetails.software}</div>}
-                {metadata.exifDetails.dateTime && <div><strong>Date/Time:</strong> {String(metadata.exifDetails.dateTime)}</div>}
-                {metadata.exifDetails.iso && <div><strong>ISO:</strong> {metadata.exifDetails.iso}</div>}
-                {metadata.exifDetails.fNumber && <div><strong>F-Number:</strong> f/{metadata.exifDetails.fNumber}</div>}
-                {metadata.exifDetails.exposureTime && <div><strong>Exposure:</strong> {metadata.exifDetails.exposureTime}s</div>}
+                <div className="exif-grid">
+                  {metadata.exifDetails.make && (
+                    <div className="exif-cell">
+                      <span className="exif-label">Make</span>
+                      <span className="exif-val">{metadata.exifDetails.make}</span>
+                    </div>
+                  )}
+                  {metadata.exifDetails.model && (
+                    <div className="exif-cell">
+                      <span className="exif-label">Model</span>
+                      <span className="exif-val">{metadata.exifDetails.model}</span>
+                    </div>
+                  )}
+                  {metadata.exifDetails.lens && (
+                    <div className="exif-cell">
+                      <span className="exif-label">Lens</span>
+                      <span className="exif-val">{metadata.exifDetails.lens}</span>
+                    </div>
+                  )}
+                  {metadata.exifDetails.fNumber && (
+                    <div className="exif-cell">
+                      <span className="exif-label">Aperture</span>
+                      <span className="exif-val">f/{metadata.exifDetails.fNumber}</span>
+                    </div>
+                  )}
+                  {metadata.exifDetails.iso && (
+                    <div className="exif-cell">
+                      <span className="exif-label">ISO</span>
+                      <span className="exif-val">{metadata.exifDetails.iso}</span>
+                    </div>
+                  )}
+                  {metadata.exifDetails.exposureTime && (
+                    <div className="exif-cell">
+                      <span className="exif-label">Exposure</span>
+                      <span className="exif-val">{metadata.exifDetails.exposureTime}s</span>
+                    </div>
+                  )}
+                  {metadata.exifDetails.software && (
+                    <div className="exif-cell">
+                      <span className="exif-label">Software</span>
+                      <span className="exif-val">{metadata.exifDetails.software}</span>
+                    </div>
+                  )}
+                  {metadata.exifDetails.dateTime && (
+                    <div className="exif-cell">
+                      <span className="exif-label">Date Taken</span>
+                      <span className="exif-val">{String(metadata.exifDetails.dateTime)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            </section>
           )}
 
           {/* GPS Location Data */}
           {metadata.gps && metadata.gpsDetails && (
-            <div className="modal-section">
-              <div className="modal-section-title" style={{ color: '#a0331a' }}>
-                <MapPin size={14} style={{ display: 'inline', marginRight: 4 }} />
-                GPS Coordinates &amp; Geotag
+            <section className="modal-section" aria-label="GPS Coordinates">
+              <div className="modal-section-title tag-gps-title">
+                <MapPin size={15} />
+                <span>Geotag &amp; Location Coordinates</span>
               </div>
-              <div className="modal-raw-box">
-                <div><strong>Latitude:</strong> {metadata.gpsDetails.latitude?.toFixed(6)}</div>
-                <div><strong>Longitude:</strong> {metadata.gpsDetails.longitude?.toFixed(6)}</div>
-                {metadata.gpsDetails.altitude && <div><strong>Altitude:</strong> {metadata.gpsDetails.altitude}m</div>}
+              <div className="modal-raw-box gps-box">
+                <div className="info-row">
+                  <span className="info-key">Latitude:</span>
+                  <span className="info-val font-mono">{metadata.gpsDetails.latitude?.toFixed(6)}&deg;</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-key">Longitude:</span>
+                  <span className="info-val font-mono">{metadata.gpsDetails.longitude?.toFixed(6)}&deg;</span>
+                </div>
+                {metadata.gpsDetails.altitude && (
+                  <div className="info-row">
+                    <span className="info-key">Altitude:</span>
+                    <span className="info-val font-mono">{metadata.gpsDetails.altitude}m</span>
+                  </div>
+                )}
                 {metadata.gpsDetails.latitude && metadata.gpsDetails.longitude && (
-                  <div style={{ marginTop: 6 }}>
+                  <div style={{ marginTop: 8 }}>
                     <a
                       href={`https://www.openstreetmap.org/?mlat=${metadata.gpsDetails.latitude}&mlon=${metadata.gpsDetails.longitude}#map=16/${metadata.gpsDetails.latitude}/${metadata.gpsDetails.longitude}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+                      className="osm-link"
                     >
-                      View on OpenStreetMap &rarr;
+                      <span>Preview location on OpenStreetMap</span>
+                      <ExternalLink size={12} />
                     </a>
                   </div>
                 )}
               </div>
-            </div>
+            </section>
           )}
 
           {/* IPTC & XMP */}
           {(metadata.iptc || metadata.xmp) && (
-            <div className="modal-section">
+            <section className="modal-section" aria-label="XMP and IPTC Tags">
               <div className="modal-section-title">
-                <FileText size={14} style={{ display: 'inline', marginRight: 4 }} />
-                XMP &amp; IPTC Provenance Tags
+                <FileText size={15} />
+                <span>XMP &amp; IPTC Provenance Tags</span>
               </div>
               <div className="modal-raw-box">
                 {metadata.digitalSourceType && (
-                  <div><strong>Digital Source Type:</strong> {metadata.digitalSourceType}</div>
+                  <div className="info-row">
+                    <span className="info-key">Digital Source:</span>
+                    <span className="info-val">{metadata.digitalSourceType}</span>
+                  </div>
                 )}
-                {metadata.software && <div><strong>Creator Tool:</strong> {metadata.software}</div>}
-                {metadata.xmp && <div><strong>XMP Structure:</strong> Present</div>}
-                {metadata.iptc && <div><strong>IPTC Profile:</strong> Present</div>}
+                {metadata.software && (
+                  <div className="info-row">
+                    <span className="info-key">Editing Software:</span>
+                    <span className="info-val">{metadata.software}</span>
+                  </div>
+                )}
+                <div className="info-row">
+                  <span className="info-key">Container:</span>
+                  <span className="info-val">Standard XMP Packet &amp; IPTC Envelope Present</span>
+                </div>
               </div>
-            </div>
+            </section>
           )}
 
           {!metadata.hasAny && (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--ok)' }}>
-              No embedded metadata found in this file. It is already clean!
+            <div className="modal-empty-state">
+              <Check size={28} color="var(--ok)" />
+              <p>No embedded metadata found in this file. It is already 100% clean!</p>
             </div>
           )}
         </div>
