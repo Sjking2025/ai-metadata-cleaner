@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export const Footer: React.FC = () => {
   return (
@@ -10,29 +11,28 @@ export const Footer: React.FC = () => {
             <span className="logo-title" style={{ fontSize: '18px' }}>AI Metadata Cleaner</span>
           </div>
           <p className="footer-desc">
-            Privacy-focused utility for detecting and removing AI provenance metadata, C2PA content credentials, EXIF data, and digital fingerprints from your media files. 100% client-side in your browser.
+            Privacy-focused utility for detecting and removing AI provenance metadata, C2PA content credentials, EXIF data, and digital fingerprints from your photos, videos, PDFs, and RAW files. 100% client-side in your browser.
           </p>
         </div>
 
         <div>
-          <div className="footer-col-title">Capabilities</div>
+          <div className="footer-col-title">Dedicated Format Tools</div>
           <ul className="footer-links">
-            <li><a href="#features" className="footer-link">C2PA Provenance Stripper</a></li>
-            <li><a href="#features" className="footer-link">EXIF &amp; GPS Geotag Remover</a></li>
-            <li><a href="#features" className="footer-link">Stable Diffusion Prompt Cleaner</a></li>
-            <li><a href="#features" className="footer-link">pHash Tracking Fingerprint Reset</a></li>
-            <li><a href="#features" className="footer-link">Batch Multi-Image Processing</a></li>
+            <li><Link to="/" className="footer-link">Image Metadata Cleaner (C2PA &amp; EXIF)</Link></li>
+            <li><Link to="/remove-metadata-from-pdf" className="footer-link">PDF Metadata Remover (XMP &amp; Author)</Link></li>
+            <li><Link to="/remove-metadata-from-video" className="footer-link">Video Metadata Remover (MP4 / MOV)</Link></li>
+            <li><Link to="/remove-metadata-from-raw" className="footer-link">Camera RAW Photo Remover (DNG / CR2)</Link></li>
           </ul>
         </div>
 
         <div>
-          <div className="footer-col-title">Formats &amp; Modes</div>
+          <div className="footer-col-title">Capabilities &amp; Modes</div>
           <ul className="footer-links">
-            <li><span className="footer-link">JPEG / JPG Sanitization</span></li>
-            <li><span className="footer-link">PNG Chunk Filtering</span></li>
-            <li><span className="footer-link">WebP &amp; AVIF Strip</span></li>
-            <li><span className="footer-link">Lossless Bit-Exact Mode</span></li>
-            <li><span className="footer-link">pHash Anti-Tracking Mode</span></li>
+            <li><span className="footer-link">Lossless Bit-Exact Binary Slicing</span></li>
+            <li><span className="footer-link">pHash Tracking Fingerprint Reset</span></li>
+            <li><span className="footer-link">MP4 / QuickTime udta Container Scrub</span></li>
+            <li><span className="footer-link">In-Browser PDF Info &amp; XMP Purge</span></li>
+            <li><span className="footer-link">Batch Multi-File ZIP Export</span></li>
           </ul>
         </div>
       </div>

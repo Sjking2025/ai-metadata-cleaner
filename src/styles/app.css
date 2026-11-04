@@ -2344,3 +2344,299 @@
   gap: 12px;
 }
 
+
+/* ==========================================================================
+   Format Tools Selector Navigation
+   ========================================================================== */
+.format-tools-nav {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 1.5rem auto;
+  padding: 0 1rem;
+}
+
+.format-tools-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--paper-elevated, #fff);
+  border: 1px solid var(--line);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  flex-wrap: wrap;
+}
+
+.format-nav-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-2);
+}
+
+.format-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.format-tool-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 9999px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.format-tool-pill:hover {
+  background: var(--paper-3);
+  border-color: var(--terracotta);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.format-tool-pill.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.format-tool-pill.active .format-pill-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.format-pill-title {
+  font-weight: 600;
+}
+
+.format-pill-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  background: var(--paper-3);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   PDF, Video & RAW Item Cards
+   ========================================================================== */
+.pdf-item-card {
+  background: var(--paper-elevated, #fff);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 8px);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pdf-item-card:hover {
+  border-color: var(--line-dark);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.pdf-card-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pdf-icon-frame {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pdf-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pdf-card-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.pdf-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-size {
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+.pdf-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+
+.pdf-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+}
+
+.pdf-tag.alert {
+  background: #fff1f0;
+  border-color: #ffccc7;
+  color: #cf1322;
+}
+
+.pdf-tag.c2pa {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #389e0d;
+}
+
+.pdf-tag.clean {
+  background: var(--ok-light);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.pdf-status-clean {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--ok);
+  font-weight: 500;
+  margin-top: 0.4rem;
+}
+
+.pdf-status-error {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--danger);
+  font-weight: 500;
+  margin-top: 0.4rem;
+}
+
+.pdf-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-clean-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--ok);
+  color: #fff;
+  border: none;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-clean-download:hover {
+  background: #237804;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Editorial Callout Card
+   ========================================================================== */
+.editorial-callout-card {
+  max-width: 1100px;
+  margin: 2.5rem auto 1rem auto;
+  background: var(--paper-elevated, #fff);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--terracotta);
+  border-radius: var(--radius-md, 8px);
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.callout-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.callout-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+}
+
+.callout-title {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+
+.callout-text {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+@media (max-width: 768px) {
+  .pdf-card-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .pdf-card-actions {
+    width: 100%;
+    margin-top: 0.75rem;
+    justify-content: flex-end;
+  }
+  .format-tools-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

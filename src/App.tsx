@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Header } from './components/Header';
+import { FormatNav } from './components/FormatNav';
 import { Dropzone } from './components/Dropzone';
 import { SettingsBar } from './components/SettingsBar';
 import { ProgressBar } from './components/ProgressBar';
@@ -187,6 +188,7 @@ export const App: React.FC = () => {
   return (
     <div className="app-wrapper">
       <Header />
+      <FormatNav />
 
       <main className="main-content">
         {/* Toast feedback pill */}
