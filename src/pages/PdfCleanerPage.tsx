@@ -16,8 +16,8 @@ import {
   FileCheck,
   ChevronDown,
   Lock,
-  Eye,
-  Info
+  FolderOpen,
+  Loader2
 } from 'lucide-react';
 
 interface PdfItem {
@@ -55,6 +55,7 @@ const PDF_FAQS = [
 export const PdfCleanerPage: React.FC = () => {
   const [items, setItems] = useState<PdfItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -180,9 +181,10 @@ export const PdfCleanerPage: React.FC = () => {
   return (
     <div className="app-wrapper">
       <Header />
-      <FormatNav />
 
       <main className="main-content">
+        <FormatNav />
+
         {toastMessage && (
           <div className="toast-floating-pill" role="status">
             <CheckCircle2 size={15} color="var(--ok)" />
@@ -216,16 +218,23 @@ export const PdfCleanerPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Dedicated PDF Dropzone */}
+        {/* Editorial Styled PDF Dropzone */}
         <div
-          className="dropzone-container"
+          className={`editorial-dropzone ${isDragOver ? 'dragover' : ''}`}
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            setIsDragOver(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragOver(false);
           }}
           onDrop={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            setIsDragOver(false);
             if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
           }}
           onClick={() => fileInputRef.current?.click()}
@@ -233,6 +242,12 @@ export const PdfCleanerPage: React.FC = () => {
           tabIndex={0}
           aria-label="Upload PDF files"
         >
+          {/* Animated Corner Brackets */}
+          <div className="dropzone-corner tl" />
+          <div className="dropzone-corner tr" />
+          <div className="dropzone-corner bl" />
+          <div className="dropzone-corner br" />
+
           <input
             ref={fileInputRef}
             type="file"
@@ -242,18 +257,42 @@ export const PdfCleanerPage: React.FC = () => {
             onChange={(e) => e.target.files && handleFiles(e.target.files)}
           />
 
-          <div className="dropzone-icon-circle">
-            <FileText size={32} color="var(--terracotta)" />
-          </div>
+          <div className="dropzone-content">
+            <div className="dropzone-icon-circle">
+              <FileText size={32} strokeWidth={1.5} color="var(--accent)" />
+            </div>
 
-          <h2 className="dropzone-title">Drop your PDF documents here</h2>
-          <p className="dropzone-subtitle">or click to browse files from your computer</p>
+            <div className="dropzone-text-group">
+              <h2 className="dropzone-heading">Drop PDF documents here to sanitize</h2>
+              <p className="dropzone-subtext">
+                Drag PDF files, or click to browse from your device
+              </p>
+            </div>
 
-          <div className="dropzone-caps-pills">
-            <span className="cap-pill">Single or Batch PDFs</span>
-            <span className="cap-pill">Author &amp; Title Removal</span>
-            <span className="cap-pill">XMP &amp; C2PA Clean</span>
-            <span className="cap-pill">100% Private (No Uploads)</span>
+            <div className="dropzone-formats-row">
+              <span className="format-badge-chip">.pdf</span>
+              <span className="format-badge-chip">Acrobat &bull; Word &bull; Quartz</span>
+              <span className="format-badge-chip plus">+ Batch Queue</span>
+            </div>
+
+            <div className="dropzone-action-bar">
+              <button
+                type="button"
+                className="btn-browse-trigger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+              >
+                <FolderOpen size={15} />
+                <span>Browse PDF Files</span>
+              </button>
+            </div>
+
+            <div className="dropzone-privacy-note">
+              <ShieldCheck size={14} />
+              <span>Zero Server Uploads &bull; Confidential documents processed 100% locally in browser memory</span>
+            </div>
           </div>
         </div>
 
@@ -285,7 +324,7 @@ export const PdfCleanerPage: React.FC = () => {
                   disabled={isProcessing}
                 >
                   <Play size={14} />
-                  <span>{isProcessing ? 'Cleaning...' : `Clean ${pendingCount} PDF${pendingCount > 1 ? 's' : ''}`}</span>
+                  <span>{isProcessing ? 'Sanitizing...' : `Clean ${pendingCount} PDF${pendingCount > 1 ? 's' : ''}`}</span>
                 </button>
               )}
 
@@ -316,99 +355,128 @@ export const PdfCleanerPage: React.FC = () => {
         {/* PDF Queue List */}
         {items.length > 0 && (
           <div className="results-list" role="feed" aria-label="PDF Queue">
-            {items.map((it) => (
-              <div key={it.id} className="pdf-item-card">
-                <div className="pdf-card-main">
-                  <div className="pdf-icon-frame">
-                    <FileText size={24} color="var(--terracotta)" />
-                  </div>
-
-                  <div className="pdf-card-info">
-                    <div className="pdf-card-title-row">
-                      <span className="pdf-name">{it.name}</span>
-                      <span className="pdf-size">{(it.size / 1024).toFixed(1)} KB</span>
+            {items.map((it) => {
+              const isCompleted = it.status === 'completed';
+              return (
+                <article
+                  key={it.id}
+                  className={`result-card ${isCompleted ? 'completed' : ''}`}
+                >
+                  <div className="result-card-inner">
+                    {/* Left Icon Frame */}
+                    <div className="result-thumb-column">
+                      <div className="result-thumb-wrapper" style={{ background: 'var(--paper)' }}>
+                        <FileText size={44} strokeWidth={1.5} color={isCompleted ? 'var(--ok)' : 'var(--accent)'} />
+                        {it.status === 'cleaning' && (
+                          <div className="thumb-loading-overlay">
+                            <Loader2 className="animate-spin" size={24} color="var(--accent)" />
+                            <span className="loading-badge-text">Cleaning...</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Pre-scan Tags */}
-                    {it.detected && (
-                      <div className="pdf-tags-row">
-                        {it.detected.author && (
-                          <span className="pdf-tag alert">
-                            Author: <strong>{it.detected.author}</strong>
+                    {/* Middle Info Column */}
+                    <div className="result-info">
+                      <div className="result-title-row">
+                        <span className="result-filename">{it.name}</span>
+                        <span className="metric-label" style={{ marginLeft: 8 }}>
+                          {(it.size / 1024).toFixed(1)} KB
+                        </span>
+                        {isCompleted ? (
+                          <span className="badge badge-clean">
+                            <CheckCircle2 size={11} /> Cleaned
                           </span>
-                        )}
-                        {it.detected.creator && (
-                          <span className="pdf-tag">
-                            App: <strong>{it.detected.creator}</strong>
-                          </span>
-                        )}
-                        {it.detected.creationDate && (
-                          <span className="pdf-tag">
-                            Created: <strong>{it.detected.creationDate.substring(0, 10)}</strong>
-                          </span>
-                        )}
-                        {it.detected.hasXmp && (
-                          <span className="pdf-tag alert">
-                            XMP Packet ({it.detected.xmpSizeApprox ? `${Math.round(it.detected.xmpSizeApprox / 1024)}KB` : 'Found'})
-                          </span>
-                        )}
-                        {it.detected.hasC2pa && (
-                          <span className="pdf-tag c2pa">C2PA Manifest Detected</span>
-                        )}
-                        {it.detected.tagsCount === 0 && (
-                          <span className="pdf-tag clean">No standard tags detected</span>
+                        ) : (
+                          <span className="badge badge-meta">Pending</span>
                         )}
                       </div>
-                    )}
 
-                    {/* Status Message */}
-                    {it.status === 'completed' && (
-                      <div className="pdf-status-clean">
-                        <CheckCircle2 size={14} color="var(--ok)" />
-                        <span>100% Sanitized &bull; All author, XMP &amp; C2PA manifests eliminated</span>
-                      </div>
-                    )}
-                    {it.status === 'error' && (
-                      <div className="pdf-status-error">
-                        <AlertCircle size={14} color="var(--danger)" />
-                        <span>{it.error}</span>
-                      </div>
-                    )}
-                  </div>
+                      {/* Pre-scan Tags */}
+                      {it.detected && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                          {it.detected.author && (
+                            <span className="pdf-tag alert">
+                              Author: <strong>{it.detected.author}</strong>
+                            </span>
+                          )}
+                          {it.detected.creator && (
+                            <span className="pdf-tag">
+                              App: <strong>{it.detected.creator}</strong>
+                            </span>
+                          )}
+                          {it.detected.creationDate && (
+                            <span className="pdf-tag">
+                              Created: <strong>{it.detected.creationDate.substring(0, 10)}</strong>
+                            </span>
+                          )}
+                          {it.detected.hasXmp && (
+                            <span className="pdf-tag alert">
+                              XMP Packet ({it.detected.xmpSizeApprox ? `${Math.round(it.detected.xmpSizeApprox / 1024)}KB` : 'Found'})
+                            </span>
+                          )}
+                          {it.detected.hasC2pa && (
+                            <span className="pdf-tag c2pa">C2PA Manifest Detected</span>
+                          )}
+                          {it.detected.tagsCount === 0 && (
+                            <span className="pdf-tag clean">No sensitive tags detected</span>
+                          )}
+                        </div>
+                      )}
 
-                  <div className="pdf-card-actions">
-                    {it.status === 'completed' ? (
+                      {/* Status Message */}
+                      {isCompleted && (
+                        <div className="pdf-status-clean" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--ok)', fontWeight: 600 }}>
+                          <CheckCircle2 size={15} />
+                          <span>100% Sanitized &bull; All author, XMP &amp; C2PA manifests eliminated</span>
+                        </div>
+                      )}
+                      {it.status === 'error' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--danger)', fontWeight: 600 }}>
+                          <AlertCircle size={15} />
+                          <span>{it.error}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Actions Column */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                      {isCompleted ? (
+                        <button
+                          type="button"
+                          className="btn-primary btn-clean-download"
+                          onClick={() => handleDownloadSingle(it)}
+                        >
+                          <Download size={14} />
+                          <span>Download Clean PDF</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          onClick={() => handleCleanAll()}
+                          disabled={isProcessing}
+                        >
+                          <Play size={13} />
+                          <span>Clean PDF</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
-                        className="btn-clean-download"
-                        onClick={() => handleDownloadSingle(it)}
+                        className="btn-secondary"
+                        onClick={() => setItems((prev) => prev.filter((p) => p.id !== it.id))}
+                        title="Remove from queue"
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
                       >
-                        <Download size={14} />
-                        <span>Download Clean PDF</span>
+                        <Trash2 size={13} />
+                        <span>Remove</span>
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-card-action"
-                        onClick={() => handleCleanAll()}
-                        disabled={isProcessing}
-                      >
-                        <Play size={13} />
-                        <span>Clean</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="btn-card-remove"
-                      onClick={() => setItems((prev) => prev.filter((p) => p.id !== it.id))}
-                      title="Remove from queue"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
 
@@ -424,7 +492,7 @@ export const PdfCleanerPage: React.FC = () => {
 
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: 'var(--terracotta)' }}>
+              <div className="feature-icon-box" style={{ color: 'var(--accent)', background: 'var(--accent-soft)' }}>
                 <FileCheck size={22} />
               </div>
               <h3 className="feature-title">Author &amp; Creator Profiles</h3>
@@ -434,7 +502,7 @@ export const PdfCleanerPage: React.FC = () => {
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: 'var(--ok)' }}>
+              <div className="feature-icon-box" style={{ color: 'var(--ok)', background: 'var(--ok-soft)' }}>
                 <Lock size={22} />
               </div>
               <h3 className="feature-title">Creation &amp; Edit Timestamps</h3>
@@ -444,7 +512,7 @@ export const PdfCleanerPage: React.FC = () => {
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: '#2563eb' }}>
+              <div className="feature-icon-box" style={{ color: '#2563eb', background: '#eff6ff' }}>
                 <FileText size={22} />
               </div>
               <h3 className="feature-title">Software &amp; Tool Signatures</h3>
@@ -454,7 +522,7 @@ export const PdfCleanerPage: React.FC = () => {
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: '#7c3aed' }}>
+              <div className="feature-icon-box" style={{ color: '#7c3aed', background: '#f5f3ff' }}>
                 <ShieldCheck size={22} />
               </div>
               <h3 className="feature-title">XMP Packets &amp; C2PA Credentials</h3>

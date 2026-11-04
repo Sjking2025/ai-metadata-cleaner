@@ -17,7 +17,9 @@ import {
   Clock,
   ChevronDown,
   AlertCircle,
-  FileVideo
+  FileVideo,
+  FolderOpen,
+  Loader2
 } from 'lucide-react';
 
 interface VideoItem {
@@ -55,6 +57,7 @@ const VIDEO_FAQS = [
 export const VideoCleanerPage: React.FC = () => {
   const [items, setItems] = useState<VideoItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -189,9 +192,10 @@ export const VideoCleanerPage: React.FC = () => {
   return (
     <div className="app-wrapper">
       <Header />
-      <FormatNav />
 
       <main className="main-content">
+        <FormatNav />
+
         {toastMessage && (
           <div className="toast-floating-pill" role="status">
             <CheckCircle2 size={15} color="var(--ok)" />
@@ -224,16 +228,23 @@ export const VideoCleanerPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Dedicated Video Dropzone */}
+        {/* Editorial Styled Video Dropzone */}
         <div
-          className="dropzone-container"
+          className={`editorial-dropzone ${isDragOver ? 'dragover' : ''}`}
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            setIsDragOver(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragOver(false);
           }}
           onDrop={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            setIsDragOver(false);
             if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
           }}
           onClick={() => fileInputRef.current?.click()}
@@ -241,6 +252,12 @@ export const VideoCleanerPage: React.FC = () => {
           tabIndex={0}
           aria-label="Upload video files"
         >
+          {/* Animated Corner Brackets */}
+          <div className="dropzone-corner tl" />
+          <div className="dropzone-corner tr" />
+          <div className="dropzone-corner bl" />
+          <div className="dropzone-corner br" />
+
           <input
             ref={fileInputRef}
             type="file"
@@ -250,18 +267,43 @@ export const VideoCleanerPage: React.FC = () => {
             onChange={(e) => e.target.files && handleFiles(e.target.files)}
           />
 
-          <div className="dropzone-icon-circle">
-            <Video size={32} color="var(--terracotta)" />
-          </div>
+          <div className="dropzone-content">
+            <div className="dropzone-icon-circle">
+              <Video size={32} strokeWidth={1.5} color="var(--accent)" />
+            </div>
 
-          <h2 className="dropzone-title">Drop your MP4 or MOV videos here</h2>
-          <p className="dropzone-subtitle">or click to browse files from your computer</p>
+            <div className="dropzone-text-group">
+              <h2 className="dropzone-heading">Drop MP4 or MOV videos here to sanitize</h2>
+              <p className="dropzone-subtext">
+                Drag video files, or click to browse from your device
+              </p>
+            </div>
 
-          <div className="dropzone-caps-pills">
-            <span className="cap-pill">MP4, MOV, M4V</span>
-            <span className="cap-pill">Instant Lossless Slicing</span>
-            <span className="cap-pill">GPS Location Erased</span>
-            <span className="cap-pill">Zero Quality Loss</span>
+            <div className="dropzone-formats-row">
+              <span className="format-badge-chip">.mp4</span>
+              <span className="format-badge-chip">.mov (QuickTime)</span>
+              <span className="format-badge-chip">.m4v</span>
+              <span className="format-badge-chip plus">Lossless &bull; No Re-encoding</span>
+            </div>
+
+            <div className="dropzone-action-bar">
+              <button
+                type="button"
+                className="btn-browse-trigger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+              >
+                <FolderOpen size={15} />
+                <span>Browse Video Files</span>
+              </button>
+            </div>
+
+            <div className="dropzone-privacy-note">
+              <ShieldCheck size={14} />
+              <span>Zero Re-encoding &bull; Slices metadata containers directly without quality loss</span>
+            </div>
           </div>
         </div>
 
@@ -324,109 +366,138 @@ export const VideoCleanerPage: React.FC = () => {
         {/* Video Queue List */}
         {items.length > 0 && (
           <div className="results-list" role="feed" aria-label="Video Queue">
-            {items.map((it) => (
-              <div key={it.id} className="pdf-item-card">
-                <div className="pdf-card-main">
-                  <div className="pdf-icon-frame">
-                    <FileVideo size={24} color="var(--terracotta)" />
-                  </div>
-
-                  <div className="pdf-card-info">
-                    <div className="pdf-card-title-row">
-                      <span className="pdf-name">{it.name}</span>
-                      <span className="pdf-size">{(it.size / (1024 * 1024)).toFixed(1)} MB</span>
+            {items.map((it) => {
+              const isCompleted = it.status === 'completed';
+              return (
+                <article
+                  key={it.id}
+                  className={`result-card ${isCompleted ? 'completed' : ''}`}
+                >
+                  <div className="result-card-inner">
+                    {/* Left Icon Frame */}
+                    <div className="result-thumb-column">
+                      <div className="result-thumb-wrapper" style={{ background: 'var(--paper)' }}>
+                        <FileVideo size={44} strokeWidth={1.5} color={isCompleted ? 'var(--ok)' : 'var(--accent)'} />
+                        {it.status === 'cleaning' && (
+                          <div className="thumb-loading-overlay">
+                            <Loader2 className="animate-spin" size={24} color="var(--accent)" />
+                            <span className="loading-badge-text">Slicing...</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Pre-scan Tags */}
-                    {it.detected && (
-                      <div className="pdf-tags-row">
-                        {it.detected.gpsCoordinates && (
-                          <span className="pdf-tag alert">
-                            <MapPin size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
-                            GPS: <strong>{it.detected.gpsCoordinates}</strong>
+                    {/* Middle Info Column */}
+                    <div className="result-info">
+                      <div className="result-title-row">
+                        <span className="result-filename">{it.name}</span>
+                        <span className="metric-label" style={{ marginLeft: 8 }}>
+                          {(it.size / (1024 * 1024)).toFixed(1)} MB
+                        </span>
+                        {isCompleted ? (
+                          <span className="badge badge-clean">
+                            <CheckCircle2 size={11} /> Cleaned
                           </span>
-                        )}
-                        {it.detected.cameraMake && (
-                          <span className="pdf-tag">
-                            <Camera size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
-                            {it.detected.cameraMake} {it.detected.cameraModel || ''}
-                          </span>
-                        )}
-                        {it.detected.creationTime && (
-                          <span className="pdf-tag">
-                            <Clock size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
-                            Recorded: {it.detected.creationTime.substring(0, 10)}
-                          </span>
-                        )}
-                        {it.detected.hasC2pa && (
-                          <span className="pdf-tag c2pa">C2PA Manifest Detected</span>
-                        )}
-                        {it.detected.tagsCount === 0 && (
-                          <span className="pdf-tag clean">Clean container</span>
+                        ) : (
+                          <span className="badge badge-meta">Pending</span>
                         )}
                       </div>
-                    )}
 
-                    {/* Status Message */}
-                    {it.status === 'completed' && (
-                      <div className="pdf-status-clean">
-                        <CheckCircle2 size={14} color="var(--ok)" />
-                        <span>Losslessly sanitized &bull; GPS, device tags &amp; timestamps removed</span>
-                      </div>
-                    )}
-                    {it.status === 'error' && (
-                      <div className="pdf-status-error">
-                        <AlertCircle size={14} color="var(--danger)" />
-                        <span>{it.error}</span>
-                      </div>
-                    )}
-                  </div>
+                      {/* Pre-scan Tags */}
+                      {it.detected && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                          {it.detected.gpsCoordinates && (
+                            <span className="pdf-tag alert">
+                              <MapPin size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
+                              GPS: <strong>{it.detected.gpsCoordinates}</strong>
+                            </span>
+                          )}
+                          {it.detected.cameraMake && (
+                            <span className="pdf-tag">
+                              <Camera size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
+                              {it.detected.cameraMake} {it.detected.cameraModel || ''}
+                            </span>
+                          )}
+                          {it.detected.creationTime && (
+                            <span className="pdf-tag">
+                              <Clock size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
+                              Recorded: {it.detected.creationTime.substring(0, 10)}
+                            </span>
+                          )}
+                          {it.detected.hasC2pa && (
+                            <span className="pdf-tag c2pa">C2PA Manifest Detected</span>
+                          )}
+                          {it.detected.tagsCount === 0 && (
+                            <span className="pdf-tag clean">Clean container</span>
+                          )}
+                        </div>
+                      )}
 
-                  <div className="pdf-card-actions">
-                    {it.status === 'completed' ? (
+                      {/* Status Message */}
+                      {isCompleted && (
+                        <div className="pdf-status-clean" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--ok)', fontWeight: 600 }}>
+                          <CheckCircle2 size={15} />
+                          <span>Losslessly sanitized &bull; GPS, device tags &amp; timestamps removed</span>
+                        </div>
+                      )}
+                      {it.status === 'error' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--danger)', fontWeight: 600 }}>
+                          <AlertCircle size={15} />
+                          <span>{it.error}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Actions Column */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                      {isCompleted ? (
+                        <button
+                          type="button"
+                          className="btn-primary btn-clean-download"
+                          onClick={() => handleDownloadSingle(it)}
+                        >
+                          <Download size={14} />
+                          <span>Download Clean Video</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          onClick={() => handleCleanAll()}
+                          disabled={isProcessing}
+                        >
+                          <Play size={13} />
+                          <span>Clean Video</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
-                        className="btn-clean-download"
-                        onClick={() => handleDownloadSingle(it)}
+                        className="btn-secondary"
+                        onClick={() => setItems((prev) => prev.filter((p) => p.id !== it.id))}
+                        title="Remove from queue"
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
                       >
-                        <Download size={14} />
-                        <span>Download Clean Video</span>
+                        <Trash2 size={13} />
+                        <span>Remove</span>
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-card-action"
-                        onClick={() => handleCleanAll()}
-                        disabled={isProcessing}
-                      >
-                        <Play size={13} />
-                        <span>Clean</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="btn-card-remove"
-                      onClick={() => setItems((prev) => prev.filter((p) => p.id !== it.id))}
-                      title="Remove from queue"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
 
         {/* Technical Callout: No Re-encoding */}
         <div className="editorial-callout-card">
           <div className="callout-badge-row">
-            <Zap size={16} color="var(--terracotta)" />
+            <Zap size={16} color="var(--accent)" />
             <span className="callout-badge">Lossless Performance</span>
           </div>
           <h3 className="callout-title">Lossless Container Slicing (Zero Recompression)</h3>
           <p className="callout-text">
-            Standard video converters take several minutes, drain laptop battery, and cause lossy compression artifacts by re-encoding video frames. Our engine parses the raw ISO-BMFF box tree and neutralizes metadata containers (<code style={{ background: 'var(--paper-2)', padding: '2px 4px', borderRadius: 3 }}>udta</code> and <code style={{ background: 'var(--paper-2)', padding: '2px 4px', borderRadius: 3 }}>uuid</code>) directly. Your audio and video streams remain 100% bit-exact, and the entire cleaning process finishes in under a second.
+            Standard video converters take several minutes, drain laptop battery, and cause lossy compression artifacts by re-encoding video frames. Our engine parses the raw ISO-BMFF box tree and neutralizes metadata containers (<code style={{ background: 'var(--paper)', padding: '2px 5px', borderRadius: 4, fontFamily: 'var(--font-mono)' }}>udta</code> and <code style={{ background: 'var(--paper)', padding: '2px 5px', borderRadius: 4, fontFamily: 'var(--font-mono)' }}>uuid</code>) directly. Your audio and video streams remain 100% bit-exact, and the entire cleaning process finishes in under a second.
           </p>
         </div>
 
@@ -442,7 +513,7 @@ export const VideoCleanerPage: React.FC = () => {
 
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: 'var(--danger)' }}>
+              <div className="feature-icon-box" style={{ color: 'var(--danger)', background: '#fff1f0' }}>
                 <MapPin size={22} />
               </div>
               <h3 className="feature-title">GPS Location Coordinates</h3>
@@ -452,7 +523,7 @@ export const VideoCleanerPage: React.FC = () => {
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: 'var(--terracotta)' }}>
+              <div className="feature-icon-box" style={{ color: 'var(--accent)', background: 'var(--accent-soft)' }}>
                 <Camera size={22} />
               </div>
               <h3 className="feature-title">Device &amp; Camera Hardware</h3>
@@ -462,7 +533,7 @@ export const VideoCleanerPage: React.FC = () => {
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: 'var(--ok)' }}>
+              <div className="feature-icon-box" style={{ color: 'var(--ok)', background: 'var(--ok-soft)' }}>
                 <Clock size={22} />
               </div>
               <h3 className="feature-title">Recording &amp; Edit Timestamps</h3>
@@ -472,7 +543,7 @@ export const VideoCleanerPage: React.FC = () => {
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: '#7c3aed' }}>
+              <div className="feature-icon-box" style={{ color: '#7c3aed', background: '#f5f3ff' }}>
                 <ShieldCheck size={22} />
               </div>
               <h3 className="feature-title">C2PA Credentials &amp; AI Labels</h3>

@@ -18,7 +18,9 @@ import {
   Sliders,
   ChevronDown,
   AlertCircle,
-  FileImage
+  FileImage,
+  FolderOpen,
+  Loader2
 } from 'lucide-react';
 
 interface RawItem {
@@ -58,6 +60,7 @@ const RAW_FAQS = [
 export const RawCleanerPage: React.FC = () => {
   const [items, setItems] = useState<RawItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -186,9 +189,10 @@ export const RawCleanerPage: React.FC = () => {
   return (
     <div className="app-wrapper">
       <Header />
-      <FormatNav />
 
       <main className="main-content">
+        <FormatNav />
+
         {toastMessage && (
           <div className="toast-floating-pill" role="status">
             <CheckCircle2 size={15} color="var(--ok)" />
@@ -221,16 +225,23 @@ export const RawCleanerPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Dedicated RAW Dropzone */}
+        {/* Editorial Styled RAW Dropzone */}
         <div
-          className="dropzone-container"
+          className={`editorial-dropzone ${isDragOver ? 'dragover' : ''}`}
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            setIsDragOver(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragOver(false);
           }}
           onDrop={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            setIsDragOver(false);
             if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
           }}
           onClick={() => fileInputRef.current?.click()}
@@ -238,6 +249,12 @@ export const RawCleanerPage: React.FC = () => {
           tabIndex={0}
           aria-label="Upload camera RAW files"
         >
+          {/* Animated Corner Brackets */}
+          <div className="dropzone-corner tl" />
+          <div className="dropzone-corner tr" />
+          <div className="dropzone-corner bl" />
+          <div className="dropzone-corner br" />
+
           <input
             ref={fileInputRef}
             type="file"
@@ -247,18 +264,44 @@ export const RawCleanerPage: React.FC = () => {
             onChange={(e) => e.target.files && handleFiles(e.target.files)}
           />
 
-          <div className="dropzone-icon-circle">
-            <Camera size={32} color="var(--terracotta)" />
-          </div>
+          <div className="dropzone-content">
+            <div className="dropzone-icon-circle">
+              <Camera size={32} strokeWidth={1.5} color="var(--accent)" />
+            </div>
 
-          <h2 className="dropzone-title">Drop your Camera RAW photos here</h2>
-          <p className="dropzone-subtitle">or click to browse DNG, CR2, CR3, NEF, ARW files</p>
+            <div className="dropzone-text-group">
+              <h2 className="dropzone-heading">Drop Camera RAW photos here to sanitize</h2>
+              <p className="dropzone-subtext">
+                Drag DNG, CR2, CR3, NEF, or ARW files, or click to browse
+              </p>
+            </div>
 
-          <div className="dropzone-caps-pills">
-            <span className="cap-pill">Canon, Nikon, Sony, DNG</span>
-            <span className="cap-pill">Camera Body Serial Removal</span>
-            <span className="cap-pill">Lens Profiles &amp; GPS Stripped</span>
-            <span className="cap-pill">Zero Server Uploads</span>
+            <div className="dropzone-formats-row">
+              <span className="format-badge-chip">.dng</span>
+              <span className="format-badge-chip">.cr2 / .cr3 (Canon)</span>
+              <span className="format-badge-chip">.nef (Nikon)</span>
+              <span className="format-badge-chip">.arw (Sony)</span>
+              <span className="format-badge-chip plus">+ Fuji &bull; Lumix &bull; Olympus</span>
+            </div>
+
+            <div className="dropzone-action-bar">
+              <button
+                type="button"
+                className="btn-browse-trigger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+              >
+                <FolderOpen size={15} />
+                <span>Browse RAW Files</span>
+              </button>
+            </div>
+
+            <div className="dropzone-privacy-note">
+              <ShieldCheck size={14} />
+              <span>Equipment Privacy &bull; Camera body and lens serial numbers wiped locally</span>
+            </div>
           </div>
         </div>
 
@@ -321,110 +364,139 @@ export const RawCleanerPage: React.FC = () => {
         {/* RAW Queue List */}
         {items.length > 0 && (
           <div className="results-list" role="feed" aria-label="RAW Photo Queue">
-            {items.map((it) => (
-              <div key={it.id} className="pdf-item-card">
-                <div className="pdf-card-main">
-                  <div className="pdf-icon-frame">
-                    <FileImage size={24} color="var(--terracotta)" />
-                  </div>
-
-                  <div className="pdf-card-info">
-                    <div className="pdf-card-title-row">
-                      <span className="pdf-name">{it.name}</span>
-                      <span className="pdf-size">{(it.size / (1024 * 1024)).toFixed(1)} MB</span>
+            {items.map((it) => {
+              const isCompleted = it.status === 'completed';
+              return (
+                <article
+                  key={it.id}
+                  className={`result-card ${isCompleted ? 'completed' : ''}`}
+                >
+                  <div className="result-card-inner">
+                    {/* Left Icon Frame */}
+                    <div className="result-thumb-column">
+                      <div className="result-thumb-wrapper" style={{ background: 'var(--paper)' }}>
+                        <FileImage size={44} strokeWidth={1.5} color={isCompleted ? 'var(--ok)' : 'var(--accent)'} />
+                        {it.status === 'cleaning' && (
+                          <div className="thumb-loading-overlay">
+                            <Loader2 className="animate-spin" size={24} color="var(--accent)" />
+                            <span className="loading-badge-text">Sanitizing...</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Pre-scan Tags */}
-                    {it.detected && (
-                      <div className="pdf-tags-row">
-                        {it.detected.cameraSerialNumber && (
-                          <span className="pdf-tag alert">
-                            <Hash size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
-                            Serial: <strong>{it.detected.cameraSerialNumber}</strong>
+                    {/* Middle Info Column */}
+                    <div className="result-info">
+                      <div className="result-title-row">
+                        <span className="result-filename">{it.name}</span>
+                        <span className="metric-label" style={{ marginLeft: 8 }}>
+                          {(it.size / (1024 * 1024)).toFixed(1)} MB
+                        </span>
+                        {isCompleted ? (
+                          <span className="badge badge-clean">
+                            <CheckCircle2 size={11} /> Cleaned ({it.outputType?.toUpperCase()})
                           </span>
-                        )}
-                        {it.detected.cameraMake && (
-                          <span className="pdf-tag">
-                            <Camera size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
-                            {it.detected.cameraMake} {it.detected.cameraModel || ''}
-                          </span>
-                        )}
-                        {it.detected.lensModel && (
-                          <span className="pdf-tag">
-                            Lens: {it.detected.lensModel}
-                          </span>
-                        )}
-                        {it.detected.ownerName && (
-                          <span className="pdf-tag alert">
-                            <User size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
-                            Owner: <strong>{it.detected.ownerName}</strong>
-                          </span>
-                        )}
-                        {it.detected.gpsCoordinates && (
-                          <span className="pdf-tag alert">
-                            <MapPin size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
-                            GPS: {it.detected.gpsCoordinates}
-                          </span>
-                        )}
-                        {it.detected.shutterCount && (
-                          <span className="pdf-tag">
-                            Shutter: {it.detected.shutterCount.toLocaleString()} actuations
-                          </span>
-                        )}
-                        {it.detected.hasC2pa && (
-                          <span className="pdf-tag c2pa">C2PA Manifest Detected</span>
+                        ) : (
+                          <span className="badge badge-meta">Pending</span>
                         )}
                       </div>
-                    )}
 
-                    {/* Status Message */}
-                    {it.status === 'completed' && (
-                      <div className="pdf-status-clean">
-                        <CheckCircle2 size={14} color="var(--ok)" />
-                        <span>Sanitized &bull; Camera serials, owner info &amp; GPS tags stripped ({it.outputType?.toUpperCase()})</span>
-                      </div>
-                    )}
-                    {it.status === 'error' && (
-                      <div className="pdf-status-error">
-                        <AlertCircle size={14} color="var(--danger)" />
-                        <span>{it.error}</span>
-                      </div>
-                    )}
-                  </div>
+                      {/* Pre-scan Tags */}
+                      {it.detected && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                          {it.detected.cameraSerialNumber && (
+                            <span className="pdf-tag alert">
+                              <Hash size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
+                              Serial: <strong>{it.detected.cameraSerialNumber}</strong>
+                            </span>
+                          )}
+                          {it.detected.cameraMake && (
+                            <span className="pdf-tag">
+                              <Camera size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
+                              {it.detected.cameraMake} {it.detected.cameraModel || ''}
+                            </span>
+                          )}
+                          {it.detected.lensModel && (
+                            <span className="pdf-tag">
+                              Lens: {it.detected.lensModel}
+                            </span>
+                          )}
+                          {it.detected.ownerName && (
+                            <span className="pdf-tag alert">
+                              <User size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
+                              Owner: <strong>{it.detected.ownerName}</strong>
+                            </span>
+                          )}
+                          {it.detected.gpsCoordinates && (
+                            <span className="pdf-tag alert">
+                              <MapPin size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
+                              GPS: {it.detected.gpsCoordinates}
+                            </span>
+                          )}
+                          {it.detected.shutterCount && (
+                            <span className="pdf-tag">
+                              Shutter: {it.detected.shutterCount.toLocaleString()} actuations
+                            </span>
+                          )}
+                          {it.detected.hasC2pa && (
+                            <span className="pdf-tag c2pa">C2PA Manifest Detected</span>
+                          )}
+                        </div>
+                      )}
 
-                  <div className="pdf-card-actions">
-                    {it.status === 'completed' ? (
+                      {/* Status Message */}
+                      {isCompleted && (
+                        <div className="pdf-status-clean" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--ok)', fontWeight: 600 }}>
+                          <CheckCircle2 size={15} />
+                          <span>Sanitized &bull; Camera serials, owner info &amp; GPS tags stripped</span>
+                        </div>
+                      )}
+                      {it.status === 'error' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--danger)', fontWeight: 600 }}>
+                          <AlertCircle size={15} />
+                          <span>{it.error}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Actions Column */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                      {isCompleted ? (
+                        <button
+                          type="button"
+                          className="btn-primary btn-clean-download"
+                          onClick={() => handleDownloadSingle(it)}
+                        >
+                          <Download size={14} />
+                          <span>Download Clean File</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          onClick={() => handleCleanAll()}
+                          disabled={isProcessing}
+                        >
+                          <Play size={13} />
+                          <span>Clean RAW</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
-                        className="btn-clean-download"
-                        onClick={() => handleDownloadSingle(it)}
+                        className="btn-secondary"
+                        onClick={() => setItems((prev) => prev.filter((p) => p.id !== it.id))}
+                        title="Remove from queue"
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
                       >
-                        <Download size={14} />
-                        <span>Download Clean File</span>
+                        <Trash2 size={13} />
+                        <span>Remove</span>
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-card-action"
-                        onClick={() => handleCleanAll()}
-                        disabled={isProcessing}
-                      >
-                        <Play size={13} />
-                        <span>Clean</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="btn-card-remove"
-                      onClick={() => setItems((prev) => prev.filter((p) => p.id !== it.id))}
-                      title="Remove from queue"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
 
@@ -440,7 +512,7 @@ export const RawCleanerPage: React.FC = () => {
 
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: 'var(--danger)' }}>
+              <div className="feature-icon-box" style={{ color: 'var(--danger)', background: '#fff1f0' }}>
                 <Hash size={22} />
               </div>
               <h3 className="feature-title">Camera &amp; Lens Serial Numbers</h3>
@@ -450,7 +522,7 @@ export const RawCleanerPage: React.FC = () => {
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: 'var(--ok)' }}>
+              <div className="feature-icon-box" style={{ color: 'var(--ok)', background: 'var(--ok-soft)' }}>
                 <User size={22} />
               </div>
               <h3 className="feature-title">Owner &amp; Copyright Fields</h3>
@@ -460,7 +532,7 @@ export const RawCleanerPage: React.FC = () => {
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: 'var(--terracotta)' }}>
+              <div className="feature-icon-box" style={{ color: 'var(--accent)', background: 'var(--accent-soft)' }}>
                 <MapPin size={22} />
               </div>
               <h3 className="feature-title">Precise GPS Geotags</h3>
@@ -470,7 +542,7 @@ export const RawCleanerPage: React.FC = () => {
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon-box" style={{ color: '#7c3aed' }}>
+              <div className="feature-icon-box" style={{ color: '#7c3aed', background: '#f5f3ff' }}>
                 <Sliders size={22} />
               </div>
               <h3 className="feature-title">Lightroom &amp; XMP History</h3>
@@ -484,7 +556,7 @@ export const RawCleanerPage: React.FC = () => {
         {/* Supported Cameras Banner */}
         <div className="editorial-callout-card">
           <div className="callout-badge-row">
-            <Camera size={16} color="var(--terracotta)" />
+            <Camera size={16} color="var(--accent)" />
             <span className="callout-badge">Universal Compatibility</span>
           </div>
           <h3 className="callout-title">Supported Camera Brands &amp; Formats</h3>

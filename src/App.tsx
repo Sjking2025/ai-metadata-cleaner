@@ -188,9 +188,9 @@ export const App: React.FC = () => {
   return (
     <div className="app-wrapper">
       <Header />
-      <FormatNav />
 
       <main className="main-content">
+        <FormatNav />
         {/* Toast feedback pill */}
         {toastMessage && (
           <div className="toast-floating-pill" role="status" aria-live="polite">

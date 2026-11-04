@@ -95,7 +95,7 @@ async function runRouteTests() {
     await pdfInput.uploadFile(testPdfPath);
 
     // Verify pre-scan displays detected Author in UI
-    await page.waitForSelector('.pdf-item-card', { timeout: 5000 });
+    await page.waitForSelector('.result-card', { timeout: 5000 });
     const authorTag = await page.$eval('.pdf-tag.alert', (el) => el.textContent?.trim());
     console.log('UI Pre-scan Tag:', authorTag);
     assert(authorTag?.includes('Jane Doe'), 'Pre-scan must show detected author "Jane Doe"');
@@ -132,7 +132,7 @@ async function runRouteTests() {
     await videoInput.uploadFile(testMp4Path);
 
     // Verify pre-scan displays GPS tag in UI
-    await page.waitForSelector('.pdf-item-card', { timeout: 5000 });
+    await page.waitForSelector('.result-card', { timeout: 5000 });
     const gpsTag = await page.$eval('.pdf-tag.alert', (el) => el.textContent?.trim());
     console.log('UI Pre-scan Tag:', gpsTag);
     assert(gpsTag?.includes('+37.7749'), 'UI must display detected GPS latitude');
@@ -162,7 +162,7 @@ async function runRouteTests() {
     console.log('RAW Page Title:', rawTitle);
     assert(rawTitle?.includes('Free Camera RAW Photo'));
 
-    const rawDropzone = await page.$('.dropzone-container');
+    const rawDropzone = await page.$('.editorial-dropzone');
     assert(rawDropzone !== null, 'RAW Dropzone must be present');
     console.log('✓ RAW photo route loaded and verified!');
 

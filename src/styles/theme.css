@@ -24,6 +24,17 @@
   --warn-soft: #fdf5e2;
   --warn-border: #f2d488;
   
+  /* Compatibility & Semantic Aliases */
+  --terracotta: var(--accent);
+  --line: var(--rule);
+  --line-dark: var(--ink-4);
+  --paper-elevated: var(--paper-card);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --danger: #cf1322;
+  --ok-light: var(--ok-soft);
+
   /* Tag specific semantic colors */
   --tag-c2pa-bg: #fdf0ec;
   --tag-c2pa-border: #f3c7b8;
